@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F7F7F5">
+<title>Onboarding Call Checklist · Proptii</title>
+<link rel="icon" type="image/png" href="../assets/Proptii%20icon%20only.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ---------------------------------------------------------------
+     Proptii · Single-Screen Onboarding Checklist (TASK-02)
+     Operator tool for live onboarding calls. Mobile-first.
+     --------------------------------------------------------------- */
+  :root {
+    --bg: #F7F7F5;          /* Warm Neutral */
+    --surface: #FFFFFF;
+    --ink: #10212B;
+    --muted: #5B6B75;
+    --line: #E3E1DA;
+    --blue: #136C9E;        /* Proptii Blue */
+    --deep: #004B71;        /* Deep Blue */
+    --orange: #DC5F12;      /* Accent */
+    --orange-soft: #FFEFD4; /* Light Orange */
+    --blue-soft: #E7F2FF;   /* Light Blue */
+    --radius: 14px;
+    --radius-sm: 8px;
+    --sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 1rem;
+    line-height: 1.5;
+    overflow-x: clip;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+  img, svg { display: block; max-width: 100%; height: auto; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+  /* ---------- Sheet (full-screen on mobile, modal on desktop) ---------- */
+  .stage { min-height: 100dvh; display: flex; }
+  .sheet {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    min-height: 100dvh;
+  }
+
+  /* ---------- Header ---------- */
+  .head {
+    padding: max(0.875rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 0.875rem max(1rem, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    gap: 0.75rem;
+  }
+  .head-top { display: flex; align-items: center; gap: 0.75rem; }
+  .brand { display: flex; align-items: center; gap: 0.625rem; min-width: 0; }
+  .brand img { height: 26px; width: auto; }
+  .brand-divider { width: 1px; height: 20px; background: var(--line); }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .timer {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    min-height: 44px; padding: 0 0.875rem;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface);
+    font-family: var(--mono); font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  @media (max-width: 359px) { .brand-divider, .brand .eyebrow { display: none; } }
+  .timer .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .timer[data-running="true"] { border-color: var(--orange); color: var(--orange); }
+  .timer[data-running="true"] .dot { background: var(--orange); animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.25; } }
+
+  .head-meta { display: grid; gap: 0.625rem; grid-template-columns: 1fr; }
+  .field-inline { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+  .field-inline label { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; }
+
+  .progress { display: flex; align-items: center; gap: 0.75rem; }
+  .pips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; flex: 1; min-width: 0; }
+  .pip { height: 6px; border-radius: 3px; background: var(--line); transition: background .25s; }
+  .pip.done { background: var(--blue); }
+  .pip.current { background: var(--orange); }
+  .progress-count { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .progress-count b { color: var(--ink); font-weight: 500; }
+
+  /* ---------- Inputs ---------- */
+  .input, .textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem; /* >=16px: no iOS zoom */
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .input::placeholder, .textarea::placeholder { color: #9AA5AC; }
+  .input:focus, .textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-soft); }
+  .textarea { resize: none; line-height: 1.4; min-height: 64px; display: block; }
+  .input-bare { border-color: transparent; background: var(--bg); }
+
+  .seg { display: inline-flex; padding: 3px; gap: 3px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); flex-shrink: 0; }
+  .seg button {
+    min-height: 38px; min-width: 44px; padding: 0 0.75rem;
+    border: 0; border-radius: 6px; background: transparent;
+    font-size: 0.9375rem; font-weight: 500; color: var(--muted);
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+  .seg button[data-tone="no"][aria-pressed="true"] { color: var(--orange); }
+
+  .chips { display: flex; gap: 0.375rem; flex-wrap: wrap; }
+  .chip {
+    min-height: 44px; padding: 0 0.75rem;
+    border: 1px dashed var(--line); border-radius: var(--radius-sm);
+    background: transparent; font-family: var(--mono); font-size: 0.8125rem; color: var(--muted);
+  }
+
+  /* ---------- Steps ---------- */
+  .steps { list-style: none; margin: 0; padding: 0; flex: 1; }
+  .step {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    grid-template-areas:
+      "check copy flag"
+      ".     cap  cap";
+    column-gap: 0.75rem;
+    row-gap: 0.625rem;
+    padding: 1rem max(1rem, env(safe-area-inset-right)) 1rem max(1rem, env(safe-area-inset-left));
+    border-bottom: 1px solid var(--line);
+    transition: background .2s;
+  }
+  .step::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: transparent; transition: background .2s;
+  }
+  .step.current { background: linear-gradient(90deg, #FFF8EE, rgba(255,255,255,0) 60%); }
+  .step.current::before { background: var(--orange); }
+
+  .check {
+    grid-area: check;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: 1.5px solid var(--line); background: var(--surface);
+    font-family: var(--mono); font-size: 0.9375rem; font-weight: 500; color: var(--muted);
+    transition: background .2s, border-color .2s, color .2s, transform .1s;
+  }
+  .check:active { transform: scale(0.94); }
+  .check svg { width: 20px; height: 20px; display: none; }
+  .step.current .check { border-color: var(--orange); color: var(--orange); }
+  .step.done .check { background: var(--blue); border-color: var(--blue); color: #fff; }
+  .step.done .check svg { display: block; }
+  .step.done .check .num { display: none; }
+
+  .copy { grid-area: copy; min-width: 0; align-self: center; }
+  .step-title { margin: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; }
+  .step-title q { quotes: "“" "”"; }
+  .prompt { margin: 0.125rem 0 0; font-size: 0.875rem; color: var(--muted); line-height: 1.4; }
+  .stamp { font-family: var(--mono); font-size: 0.75rem; color: var(--blue); margin-left: 0.375rem; white-space: nowrap; }
+  .step.done .step-title { color: var(--deep); }
+
+  .cap { grid-area: cap; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; min-width: 0; }
+  .cap > .input, .cap > .textarea { flex: 1 1 12rem; min-width: 0; }
+  .cap-note { flex-basis: 100%; font-size: 0.8125rem; color: var(--orange); margin: 0; }
+  .cap-note[hidden] { display: none; }
+
+  .flag {
+    grid-area: flag;
+    width: 44px; height: 44px; border-radius: var(--radius-sm);
+    display: grid; place-items: center;
+    border: 1px solid transparent; background: transparent; color: #A8B2B8;
+    transition: color .15s, background .15s, border-color .15s;
+  }
+  .flag svg { width: 18px; height: 18px; }
+  .flag[aria-pressed="true"] { color: var(--orange); background: var(--orange-soft); border-color: #F6D3A8; }
+
+  /* ---------- Footer ---------- */
+  .foot {
+    position: sticky; bottom: 0;
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    padding: 0.75rem max(1rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+    background: rgba(255,255,255,0.96);
+    backdrop-filter: blur(6px);
+    border-top: 1px solid var(--line);
+  }
+  .foot-note { font-size: 0.8125rem; color: var(--muted); flex: 1 1 100%; display: flex; align-items: center; gap: 0.375rem; }
+  .foot-note svg { width: 14px; height: 14px; color: var(--orange); flex-shrink: 0; }
+  .btn {
+    min-height: 44px; padding: 0 1rem;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    border-radius: var(--radius-sm); border: 1px solid var(--line);
+    background: var(--surface); font-weight: 600; font-size: 0.9375rem;
+    transition: background .15s, transform .1s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn svg { width: 16px; height: 16px; }
+  .btn-primary { background: var(--deep); border-color: var(--deep); color: #fff; flex: 1; }
+  .btn-ghost { color: var(--muted); }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+    background: var(--ink); color: #fff; padding: 0.625rem 1rem; border-radius: var(--radius-sm);
+    font-size: 0.875rem; transition: opacity .2s, transform .2s; z-index: 10; max-width: calc(100% - 2rem);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (hover: hover) and (pointer: fine) {
+    .check:hover { border-color: var(--blue); }
+    .flag:hover { color: var(--orange); }
+    .chip:hover { border-color: var(--blue); color: var(--blue); }
+    .btn:hover { background: var(--bg); }
+    .btn-primary:hover { background: #003A58; }
+  }
+
+  /* ---------- Tablet / desktop: one-screen modal ---------- */
+  @media (min-width: 640px) {
+    .head-meta { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+    .foot { flex-wrap: nowrap; }
+    .foot-note { flex: 1 1 0; min-width: 0; }
+    .btn-primary { flex: 0 0 auto; }
+  }
+
+  @media (min-width: 900px) {
+    .stage { align-items: center; justify-content: center; padding: 1.5rem; }
+    .sheet {
+      max-width: 1080px;
+      min-height: 0;
+      max-height: calc(100dvh - 3rem);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 0 var(--line), 0 24px 48px -28px rgba(0, 75, 113, 0.28);
+      overflow: hidden;
+    }
+    .head { padding: 1rem 1.5rem; }
+    .head-meta { grid-template-columns: minmax(0, 22rem) auto minmax(0, 1fr); gap: 1.5rem; }
+    .steps { overflow-y: auto; }
+    .step {
+      grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.15fr) 44px;
+      grid-template-areas: "check copy cap flag";
+      column-gap: 1rem;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+    }
+    .cap { flex-wrap: nowrap; }
+    .cap.wrap { flex-wrap: wrap; }
+    .cap-note { flex-basis: 100%; }
+    .foot { position: static; padding: 0.75rem 1.5rem; }
+  }
+
+  /* Short desktop viewports (e.g. 1366×768 laptop with browser chrome) */
+  @media (min-width: 900px) and (max-height: 760px) {
+    .stage { padding: 0.75rem; }
+    .sheet { max-height: calc(100dvh - 1.5rem); }
+    .head { padding: 0.75rem 1.5rem; gap: 0.5rem; }
+    .step { padding: 0.5rem 1.5rem; }
+    .textarea { min-height: 52px; }
+    .prompt { font-size: 0.8125rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  @media print {
+    body { background: #fff; }
+    .stage { padding: 0; }
+    .sheet { max-height: none; border: 0; box-shadow: none; }
+    .foot, .timer, .flag[aria-pressed="false"], .chips, .toast { display: none !important; }
+    .step { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main class="stage">
+  <section class="sheet" role="dialog" aria-modal="false" aria-labelledby="sheet-title">
+
+    <!-- Header -->
+    <header class="head">
+      <div class="head-top">
+        <div class="brand">
+          <img src="../assets/proptiifull%20logo.png" alt="Proptii" width="96" height="26">
+          <span class="brand-divider" aria-hidden="true"></span>
+          <h1 id="sheet-title" class="eyebrow" style="margin:0;font-weight:400;">Onboarding call</h1>
+        </div>
+        <button type="button" class="timer" id="timer" data-running="false" aria-live="off" aria-label="Start call timer">
+          <span class="dot" aria-hidden="true"></span>
+          <span id="timer-text">Start call</span>
+        </button>
+      </div>
+
+      <div class="head-meta">
+        <div class="field-inline">
+          <label for="landlord">Landlord</label>
+          <input class="input input-bare" id="landlord" type="text" autocomplete="off" placeholder="Name or company">
+        </div>
+        <div class="field-inline">
+          <label for="callDate" class="sr-only">Call date</label>
+          <input class="input input-bare" id="callDate" type="date" style="width:auto;">
+        </div>
+        <div class="progress" aria-label="Progress">
+          <div class="pips" id="pips" aria-hidden="true">
+            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+            <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+          </div>
+          <span class="progress-count" id="progress-count" aria-live="polite"><b>0</b> of 6</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- The 6-step flow (order is fixed — matches live call script) -->
+    <ol class="steps" id="steps">
+
+      <!-- 1. Permission to record -->
+      <li class="step" data-step="0">
+        <button type="button" class="check" aria-pressed="false" aria-label="Mark step 1 complete: Permission to record the call">
+          <span class="num">1</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+        <div class="copy">
+          <h2 class="step-title">Permission to record the call<span class="stamp"></span></h2>
+          <p class="prompt">“Are you happy for us to record this? It's only used to improve onboarding.”</p>
+        </div>
+        <div class="cap wrap">
+          <div class="seg" role="group" aria-label="Recording consent">
+            <button type="button" data-field="consent" data-value="yes" aria-pressed="false">Yes, recording</button>
+            <button type="button" data-field="consent" data-value="no" data-tone="no" aria-pressed="false">No</button>
+          </div>
+          <p class="cap-note" id="consent-note" hidden>No recording. Take written notes and capture their exact words in step 5.</p>
+        </div>
+        <button type="button" class="flag" aria-pressed="false" aria-label="Flag friction on step 1" title="Flag friction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        </button>
+      </li>
+
+      <!-- 2. Add first property -->
+      <li class="step" data-step="1">
+        <button type="button" class="check" aria-pressed="false" aria-label="Mark step 2 complete: Add first property">
+          <span class="num">2</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+        <div class="copy">
+          <h2 class="step-title">Add first property<span class="stamp"></span></h2>
+          <p class="prompt">They drive, you watch. Ask them to share their screen and add a real one.</p>
+        </div>
+        <div class="cap">
+          <label for="property" class="sr-only">Property address or postcode</label>
+          <input class="input" id="property" data-field="property" type="text" autocomplete="off" placeholder="Address or postcode, e.g. 14 Elm Rd, M14 5RT">
+        </div>
+        <button type="button" class="flag" aria-pressed="false" aria-label="Flag friction on step 2" title="Flag friction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        </button>
+      </li>
+
+      <!-- 3. Book or log one real viewing -->
+      <li class="step" data-step="2">
+        <button type="button" class="check" aria-pressed="false" aria-label="Mark step 3 complete: Book or log one real viewing">
+          <span class="num">3</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+        <div class="copy">
+          <h2 class="step-title">Book or log one real viewing<span class="stamp"></span></h2>
+          <p class="prompt">A real one, upcoming or already done. No test data.</p>
+        </div>
+        <div class="cap">
+          <div class="seg" role="group" aria-label="Viewing type">
+            <button type="button" data-field="viewingType" data-value="booked" aria-pressed="false">Booked</button>
+            <button type="button" data-field="viewingType" data-value="logged" aria-pressed="false">Logged</button>
+          </div>
+          <label for="viewingAt" class="sr-only">Viewing date and time</label>
+          <input class="input" id="viewingAt" data-field="viewingAt" type="datetime-local">
+        </div>
+        <button type="button" class="flag" aria-pressed="false" aria-label="Flag friction on step 3" title="Flag friction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        </button>
+      </li>
+
+      <!-- 4. Send first invite to a tenant -->
+      <li class="step" data-step="3">
+        <button type="button" class="check" aria-pressed="false" aria-label="Mark step 4 complete: Send first invite to a tenant">
+          <span class="num">4</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+        <div class="copy">
+          <h2 class="step-title">Send first invite to a tenant<span class="stamp"></span></h2>
+          <p class="prompt">One tenant or applicant, sent while we're still on the call.</p>
+        </div>
+        <div class="cap">
+          <label for="tenantEmail" class="sr-only">Tenant email</label>
+          <input class="input" id="tenantEmail" data-field="tenantEmail" type="email" inputmode="email" autocomplete="off" placeholder="tenant@email.co.uk">
+        </div>
+        <button type="button" class="flag" aria-pressed="false" aria-label="Flag friction on step 4" title="Flag friction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        </button>
+      </li>
+
+      <!-- 5. Qualitative question -->
+      <li class="step" data-step="4">
+        <button type="button" class="check" aria-pressed="false" aria-label="Mark step 5 complete: What nearly stopped you?">
+          <span class="num">5</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+        <div class="copy">
+          <h2 class="step-title">Ask: <q>What nearly stopped you?</q><span class="stamp"></span></h2>
+          <p class="prompt">Ask it word for word, then stay quiet. Write their words, not yours.</p>
+        </div>
+        <div class="cap">
+          <label for="quote" class="sr-only">Their answer, verbatim</label>
+          <textarea class="textarea" id="quote" data-field="quote" rows="2" placeholder="“I wasn't sure if the tenant would get spammed…”"></textarea>
+        </div>
+        <button type="button" class="flag" aria-pressed="false" aria-label="Flag friction on step 5" title="Flag friction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        </button>
+      </li>
+
+      <!-- 6. Agree on next check-in date -->
+      <li class="step" data-step="5">
+        <button type="button" class="check" aria-pressed="false" aria-label="Mark step 6 complete: Agree on next check-in date">
+          <span class="num">6</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        </button>
+        <div class="copy">
+          <h2 class="step-title">Agree on next check-in date<span class="stamp"></span></h2>
+          <p class="prompt">Agree a date before you hang up. “Next week” doesn't count.</p>
+        </div>
+        <div class="cap">
+          <label for="checkIn" class="sr-only">Next check-in date</label>
+          <input class="input" id="checkIn" data-field="checkIn" type="date" style="flex:0 1 11rem;">
+          <div class="chips" role="group" aria-label="Quick dates">
+            <button type="button" class="chip" data-days="3">+3d</button>
+            <button type="button" class="chip" data-days="7">+7d</button>
+            <button type="button" class="chip" data-days="14">+14d</button>
+          </div>
+        </div>
+        <button type="button" class="flag" aria-pressed="false" aria-label="Flag friction on step 6" title="Flag friction">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        </button>
+      </li>
+    </ol>
+
+    <!-- Footer -->
+    <footer class="foot">
+      <p class="foot-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4h11l-1.5 4L16 12H5"/></svg>
+        <span>Flag any step where they hesitated. Flags go into the friction log. Saved on this device.</span>
+      </p>
+      <button type="button" class="btn btn-ghost" id="reset">Reset</button>
+      <button type="button" class="btn btn-primary" id="copy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        Copy call summary
+      </button>
+    </footer>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const STORE = "proptii.onboardingChecklist.v1";
+  const TITLES = [
+    "Permission to record the call",
+    "Add first property",
+    "Book or log one real viewing",
+    "Send first invite to a tenant",
+    "Qualitative: \u201cWhat nearly stopped you?\u201d",
+    "Agree on next check-in date"
+  ];
+
+  const today = () => {
+    const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 10);
+  };
+  const blank = () => ({
+    landlord: "", callDate: today(), startedAt: null,
+    fields: { consent: "", property: "", viewingType: "", viewingAt: "", tenantEmail: "", quote: "", checkIn: "" },
+    steps: Array.from({ length: 6 }, () => ({ done: false, doneAt: null, flag: false }))
+  });
+
+  let state;
+  try { state = JSON.parse(localStorage.getItem(STORE)) || blank(); } catch { state = blank(); }
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(state)); } catch {} };
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const rows = $$(".step");
+  const fmtTime = ts => new Date(ts).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+
+  // Which field(s) make each step "captured" (auto-ticks when first satisfied)
+  const captured = [
+    f => !!f.consent,
+    f => f.property.trim().length > 2,
+    f => !!f.viewingType && !!f.viewingAt,
+    f => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.tenantEmail.trim()),
+    f => f.quote.trim().length > 2,
+    f => !!f.checkIn
+  ];
+  const fieldStep = { consent: 0, property: 1, viewingType: 2, viewingAt: 2, tenantEmail: 3, quote: 4, checkIn: 5 };
+
+  function setDone(i, done) {
+    const s = state.steps[i];
+    s.done = done;
+    s.doneAt = done ? Date.now() : null;
+    if (done && !state.startedAt) startTimer();
+  }
+
+  function render() {
+    const current = state.steps.findIndex(s => !s.done);
+    rows.forEach((row, i) => {
+      const s = state.steps[i];
+      row.classList.toggle("done", s.done);
+      row.classList.toggle("current", i === current);
+      const check = $(".check", row);
+      check.setAttribute("aria-pressed", s.done);
+      $(".stamp", row).textContent = s.done && s.doneAt ? fmtTime(s.doneAt) : "";
+      $(".flag", row).setAttribute("aria-pressed", s.flag);
+      if (i === current) row.setAttribute("aria-current", "step"); else row.removeAttribute("aria-current");
+    });
+    const doneCount = state.steps.filter(s => s.done).length;
+    $$(".pip").forEach((p, i) => {
+      p.classList.toggle("done", state.steps[i].done);
+      p.classList.toggle("current", i === current);
+    });
+    $("#progress-count").innerHTML = doneCount === 6 ? "<b>All 6</b> done" : `<b>${doneCount}</b> of 6`;
+
+    // Segmented controls
+    $$(".seg button").forEach(b => b.setAttribute("aria-pressed", state.fields[b.dataset.field] === b.dataset.value));
+    $("#consent-note").hidden = state.fields.consent !== "no";
+  }
+
+  function hydrateInputs() {
+    $("#landlord").value = state.landlord;
+    $("#callDate").value = state.callDate;
+    $$("[data-field]").forEach(el => { if (el.tagName !== "BUTTON") el.value = state.fields[el.dataset.field] || ""; });
+  }
+
+  function onFieldChange(field, value, commit) {
+    state.fields[field] = value;
+    const i = fieldStep[field];
+    if (commit && captured[i](state.fields) && !state.steps[i].done) setDone(i, true);
+    save(); render();
+  }
+
+  // --- Events ---
+  rows.forEach((row, i) => {
+    $(".check", row).addEventListener("click", () => { setDone(i, !state.steps[i].done); save(); render(); });
+    $(".flag", row).addEventListener("click", () => { state.steps[i].flag = !state.steps[i].flag; save(); render(); });
+  });
+
+  $$(".seg button").forEach(b => b.addEventListener("click", () => {
+    const { field, value } = b.dataset;
+    onFieldChange(field, state.fields[field] === value ? "" : value, true);
+  }));
+
+  $$("input[data-field], textarea[data-field]").forEach(el => {
+    el.addEventListener("input", () => onFieldChange(el.dataset.field, el.value, false));
+    el.addEventListener("change", () => onFieldChange(el.dataset.field, el.value, true));
+  });
+
+  $$(".chip").forEach(c => c.addEventListener("click", () => {
+    const d = new Date(); d.setDate(d.getDate() + Number(c.dataset.days));
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    const v = d.toISOString().slice(0, 10);
+    $("#checkIn").value = v;
+    onFieldChange("checkIn", v, true);
+  }));
+
+  $("#landlord").addEventListener("input", e => { state.landlord = e.target.value; save(); });
+  $("#callDate").addEventListener("change", e => { state.callDate = e.target.value; save(); });
+
+  // Auto-grow textarea on mobile
+  const ta = $("#quote");
+  const grow = () => { if (window.innerWidth < 900) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; } else ta.style.height = ""; };
+  ta.addEventListener("input", grow);
+
+  // --- Call timer ---
+  const timerBtn = $("#timer"), timerText = $("#timer-text");
+  let tick;
+  function startTimer() {
+    if (!state.startedAt) state.startedAt = Date.now();
+    timerBtn.dataset.running = "true";
+    timerBtn.setAttribute("aria-label", "Call timer running");
+    clearInterval(tick);
+    const draw = () => {
+      const s = Math.floor((Date.now() - state.startedAt) / 1000);
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+      timerText.textContent = (h ? h + ":" : "") + String(m).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+    };
+    draw(); tick = setInterval(draw, 1000);
+    save();
+  }
+  timerBtn.addEventListener("click", () => { if (!state.startedAt) startTimer(); });
+
+  // --- Summary ---
+  function summary() {
+    const f = state.fields;
+    const elapsed = state.startedAt ? Math.round((Date.now() - state.startedAt) / 60000) + " min" : "n/a";
+    const fmtDate = v => v ? new Date(v).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "";
+    const fmtDT = v => v ? new Date(v).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
+    const detail = [
+      f.consent ? (f.consent === "yes" ? "Yes, recorded" : "No, notes only") : "",
+      f.property,
+      [f.viewingType && f.viewingType[0].toUpperCase() + f.viewingType.slice(1), fmtDT(f.viewingAt)].filter(Boolean).join(" · "),
+      f.tenantEmail,
+      f.quote ? `"${f.quote.trim()}"` : "",
+      fmtDate(f.checkIn)
+    ];
+    const lines = [
+      `Proptii onboarding call: ${state.landlord || "Unnamed landlord"}`,
+      `Date: ${fmtDate(state.callDate)} · Duration: ${elapsed} · ${state.steps.filter(s => s.done).length}/6 complete`,
+      ""
+    ];
+    TITLES.forEach((t, i) => {
+      const s = state.steps[i];
+      lines.push(`${s.done ? "[x]" : "[ ]"} ${i + 1}. ${t}${s.flag ? "  ⚑ FRICTION" : ""}`);
+      if (detail[i]) lines.push(`      ${detail[i]}`);
+    });
+    const flagged = state.steps.map((s, i) => s.flag ? `${i + 1}. ${TITLES[i]}` : null).filter(Boolean);
+    if (flagged.length) lines.push("", "Friction flagged (add to FRICTION_LOG):", ...flagged.map(x => "  - " + x));
+    return lines.join("\n");
+  }
+
+  const toast = msg => {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+  };
+
+  $("#copy").addEventListener("click", async () => {
+    const text = summary();
+    try { await navigator.clipboard.writeText(text); toast("Summary copied. Paste it into the friction log."); }
+    catch {
+      const tmp = document.createElement("textarea"); tmp.value = text; tmp.style.position = "fixed"; tmp.style.opacity = "0";
+      document.body.appendChild(tmp); tmp.select();
+      try { document.execCommand("copy"); toast("Summary copied."); } catch { toast("Copy failed. Select the text manually."); }
+      tmp.remove();
+    }
+  });
+
+  $("#reset").addEventListener("click", () => {
+    if (!confirm("Clear this call and start a new checklist?")) return;
+    clearInterval(tick);
+    state = blank(); save();
+    timerBtn.dataset.running = "false"; timerText.textContent = "Start call";
+    timerBtn.setAttribute("aria-label", "Start call timer");
+    hydrateInputs(); render(); grow();
+  });
+
+  // --- Init ---
+  hydrateInputs(); render(); grow();
+  if (state.startedAt) startTimer();
+})();
+</script>
+</body>
+</html>

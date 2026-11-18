@@ -1,0 +1,6 @@
+*.pyc
+__pycache__/
+.DS_Store
+temp_measure.html
+test_mobile_chrome.png
+print_v2_gift.pdf
